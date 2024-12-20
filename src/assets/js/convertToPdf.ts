@@ -25,7 +25,7 @@ interface ValidParticipant {
   'Exchange Type': string
 }
 
-const basePdfDirectory = '/src/assets/base_pdf.pdf'
+const basePdfDirectory = './src/assets/base_pdf.pdf'
 
 // The x-coordinates of the items in the pdf. Meaning where the texts should be placed.
 const NAME_X = 67
@@ -143,7 +143,7 @@ async function createPdf(allParticipants: Participant[]) {
   const pdfDoc = await PDFDocument.load(existingPdfBytes)
 
   // Fetch the Ubuntu font
-  const fontUrl = '/src/assets/Font-Nunito-Regular.ttf'
+  const fontUrl = './src/assets/Font-Nunito-Regular.ttf'
   const fontBytes = await fetch(fontUrl).then((res) => res.arrayBuffer())
 
   // Embed the Nunito Regular font
@@ -216,7 +216,9 @@ function writeOtherPdfPages(
   while (remainingParticipants.length > 0) {
     // Throw an error if the pages are not enough
     if (currentPage > remainingPdfPages.length - 1)
-      throw new Error('Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.')
+      throw new Error(
+        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.',
+      )
 
     // Write remaining participants (max AMOUNT_PARTICIPANTS_OTHER_PAGES)
     addAllParticipantsToPdfPage(
@@ -284,7 +286,7 @@ function addParticipantToPdf(
   else if (participant.exchangeType === ExchangeType.Tutor) exchangeTypeXPos = TUTOR_X
 
   // Draw the x for the exchange type
-  pdfPage.drawText("x", {
+  pdfPage.drawText('x', {
     x: exchangeTypeXPos,
     y: yCoordinate + 1,
     font: font,

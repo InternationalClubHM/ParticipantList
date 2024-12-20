@@ -75,7 +75,7 @@ export default {
       alink.click()
 
       // Signalize success!
-      this.resultText = this.successText;
+      this.resultText = this.successText
     },
   },
 }
