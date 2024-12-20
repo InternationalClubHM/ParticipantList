@@ -25,7 +25,7 @@ interface ValidParticipant {
   'Exchange Type': string
 }
 
-const basePdfDirectory = './src/assets/base_pdf.pdf'
+const basePdfDirectory = './base_pdf.pdf'
 
 // The x-coordinates of the items in the pdf. Meaning where the texts should be placed.
 const NAME_X = 67
@@ -143,7 +143,7 @@ async function createPdf(allParticipants: Participant[]) {
   const pdfDoc = await PDFDocument.load(existingPdfBytes)
 
   // Fetch the Ubuntu font
-  const fontUrl = './src/assets/Font-Nunito-Regular.ttf'
+  const fontUrl = './Font-Nunito-Regular.ttf'
   const fontBytes = await fetch(fontUrl).then((res) => res.arrayBuffer())
 
   // Embed the Nunito Regular font
