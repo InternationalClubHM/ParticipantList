@@ -272,7 +272,7 @@ function addParticipantToPdf(
   pdfPage: PDFPage,
   participant: Participant,
   yCoordinate: number,
-  font: PDFFont
+  font: PDFFont,
 ) {
   function drawString(string: string, x: number, maxWidth: number) {
     let fontSize = DEFAULT_FONT_SIZE

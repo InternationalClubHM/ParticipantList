@@ -1,26 +1,60 @@
 <template>
-  <img src="@/assets/logo.png" alt="Logo" class="logo" />
-  <label for="file-upload" class="file-upload-label" :class="fileUploaded ? 'upload-success' : ''">
-    {{ fileUploaded?.name || 'Excel-Datei auswählen' }}
-  </label>
-  <input type="file" id="file-upload" @change="onFileUpdate" accept=".xlsx" />
-  <button class="convert-button" @click="convertButtonClicked()">
-    Teilnehmerliste in PDF umwandeln!
-  </button>
-  <p class="result-text" :style="{ color: resultText == successText ? 'lime' : 'red' }">
-    {{ resultText }}
-  </p>
+  <div class="container" @dragenter.prevent="dragActive = true">
+    <div class="drag-window" v-if="dragActive"  @dragleave.prevent="dragActive = false" @drop.prevent="onDrop">
+      <p class="drag-text">
+        Leg deine xlsx-Datei hier ab.
+      </p>
+    </div>
+
+    <img src="@/assets/logo.png" alt="Logo" class="logo" />
+    <label
+      for="file-upload"
+      class="file-upload-label"
+      :class="fileUploaded ? 'upload-success' : ''"
+    >
+      {{ fileUploaded?.name || 'Excel-Datei auswählen' }}
+    </label>
+    <input type="file" id="file-upload" @change="onFileUpdate" accept=".xlsx" />
+    <button class="convert-button" @click="convertButtonClicked()">
+      Teilnehmerliste in PDF umwandeln!
+    </button>
+    <p class="result-text" :style="{ color: resultText == successText ? 'lime' : 'red' }">
+      {{ resultText }}
+    </p>
+  </div>
 </template>
 
 <script lang="ts">
 import { convertToPdf } from '@/assets/js/convertToPdf.ts'
+import { onMounted, onUnmounted } from 'vue'
 
 export default {
+  setup() {
+    function preventDefaults(e: Event) {
+      e.preventDefault()
+    }
+
+    const events = ['dragenter', 'dragover', 'dragleave', 'drop']
+
+    // Override the default behaviour of opening a file on drag and drop
+    onMounted(() => {
+      events.forEach((eventName) => {
+        document.body.addEventListener(eventName, preventDefaults)
+      })
+    })
+
+    onUnmounted(() => {
+      events.forEach((eventName) => {
+        document.body.removeEventListener(eventName, preventDefaults)
+      })
+    })
+  },
   data() {
     return {
       fileUploaded: null as File | null,
       successText: 'PDF erstellt und heruntergeladen!',
       resultText: '',
+      dragActive: false
     }
   },
   methods: {
@@ -77,6 +111,33 @@ export default {
       // Signalize success!
       this.resultText = this.successText
     },
-  },
+
+    onDrop(e: DragEvent) {
+      this.dragActive = false;
+
+      // Something didn't work quite well
+      if (!e.dataTransfer?.files) {
+        this.resultText = 'Die Drag-and-Drop Aktion hat leider nicht geklappt...'
+        return
+      }
+
+      // Multiple files have been selected
+      if (e.dataTransfer.files.length != 1) {
+        this.resultText = 'Bitte ziehe nur eine Datei rein.'
+        return
+      }
+
+      const fileDropped = e.dataTransfer.files[0]
+
+      // The file has the wrong ending/type
+      if (!fileDropped.name.endsWith('.xlsx')) {
+        this.resultText = 'Bitte wähle eine .xlsx (Excel) Datei aus.'
+        return
+      }
+
+      // Successfully uploaded
+      this.fileUploaded = fileDropped
+    }
+  }
 }
 </script>
