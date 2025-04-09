@@ -33,7 +33,7 @@ export default {
         const file = target.files[0]
 
         if (!file.name.endsWith('.xlsx')) {
-          this.resultText = 'Bitte lade eine .xlsx (Excel) Datei hoch.'
+          this.resultText = 'Bitte wähle eine .xlsx (Excel) Datei aus.'
           return
         }
 

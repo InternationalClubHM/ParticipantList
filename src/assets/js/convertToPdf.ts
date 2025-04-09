@@ -83,24 +83,32 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
     'Last Name',
     'Phone Number',
     'Country of Origin',
-    'Exchange Type',
+    'Exchange Type'
   ]
 
   const allParticipants: Participant[] = []
 
   // Iterate through all rows
   sheetRows.forEach((participant, index) => {
+    const modifiedParticipant = participant as { [key: string]: string }
+
+    // Trim each value.
+    for (const key in participant) {
+      // Also convert every cell to string
+      modifiedParticipant[key.trim()] = modifiedParticipant[key].toString()
+    }
+
     // For every participant, every mandatory property must exist. If one does not, an error is thrown.
     mandatoryProperties.forEach((property) => {
-      if (!participant.hasOwnProperty(property)) {
+      if (!modifiedParticipant.hasOwnProperty(property)) {
         throw new Error(
-          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`,
+          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
         )
       }
     })
 
     // Cast is fine, as we just checked if every property exists (an error would have been thrown).
-    const validParticipant = participant as ValidParticipant
+    const validParticipant = modifiedParticipant as unknown as ValidParticipant
 
     // The name is the first name + last name
     const name = validParticipant['First Name'] + ' ' + validParticipant['Last Name']
@@ -127,7 +135,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       name: name,
       phoneNumber: phoneNumber,
       country: countryOfOrigin,
-      exchangeType: exchangeType,
+      exchangeType: exchangeType
     })
   })
 
@@ -154,7 +162,7 @@ async function createPdf(allParticipants: Participant[]) {
 
   // Get a list of all Tutors
   const tutors = allParticipants.filter(
-    (participant) => participant.exchangeType === ExchangeType.Tutor,
+    (participant) => participant.exchangeType === ExchangeType.Tutor
   )
   // Get the participants on the first page, can also be less than AMOUNT_PARTICIPANTS_FIRST_PAGE if there aren't many participants for the event.
   const firstParticipants = allParticipants.slice(0, AMOUNT_PARTICIPANTS_FIRST_PAGE)
@@ -184,7 +192,7 @@ function writeFirstPdfPage(
   firstPdfPage: PDFPage,
   tutors: Participant[],
   firstParticipants: Participant[],
-  font: PDFFont,
+  font: PDFFont
 ) {
   // Get the list of tutors to write down at the title bar
   const tutorNameList = tutors.map((tutor) => tutor.name).join(', ')
@@ -194,7 +202,7 @@ function writeFirstPdfPage(
     x: TUTOR_LIST_X,
     y: TUTOR_LIST_Y,
     font: font,
-    size: DEFAULT_FONT_SIZE,
+    size: DEFAULT_FONT_SIZE
   })
 
   // Add first participants
@@ -207,7 +215,7 @@ function writeFirstPdfPage(
 function writeOtherPdfPages(
   allParticipantsNotOnFirstPage: Participant[],
   remainingPdfPages: PDFPage[],
-  font: PDFFont,
+  font: PDFFont
 ): number {
   let remainingParticipants = allParticipantsNotOnFirstPage
   let currentPage = 0
@@ -217,7 +225,7 @@ function writeOtherPdfPages(
     // Throw an error if the pages are not enough
     if (currentPage > remainingPdfPages.length - 1)
       throw new Error(
-        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.',
+        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.'
       )
 
     // Write remaining participants (max AMOUNT_PARTICIPANTS_OTHER_PAGES)
@@ -225,7 +233,7 @@ function writeOtherPdfPages(
       remainingPdfPages[currentPage],
       remainingParticipants.slice(0, AMOUNT_PARTICIPANTS_OTHER_PAGES),
       PARTICIPANTS_OTHER_PAGES_Y,
-      font,
+      font
     )
 
     // Remove the just written participants from the remaining ones and add another page
@@ -246,7 +254,7 @@ function addAllParticipantsToPdfPage(
   pdfPage: PDFPage,
   participantsToWrite: Participant[],
   startY: number,
-  font: PDFFont,
+  font: PDFFont
 ) {
   for (let i = 0; i < participantsToWrite.length; i++) {
     const yCoordinate = startY - ROW_HEIGHT * i
@@ -264,7 +272,7 @@ function addParticipantToPdf(
   pdfPage: PDFPage,
   participant: Participant,
   yCoordinate: number,
-  font: PDFFont,
+  font: PDFFont
 ) {
   function drawString(string: string, x: number) {
     // Write the participant's name
@@ -272,7 +280,7 @@ function addParticipantToPdf(
       x: x,
       y: yCoordinate,
       font: font,
-      size: DEFAULT_FONT_SIZE,
+      size: DEFAULT_FONT_SIZE
     })
   }
 
@@ -290,6 +298,6 @@ function addParticipantToPdf(
     x: exchangeTypeXPos,
     y: yCoordinate + 1,
     font: font,
-    size: 17,
+    size: 17
   })
 }
