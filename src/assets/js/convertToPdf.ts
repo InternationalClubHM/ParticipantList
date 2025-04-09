@@ -83,7 +83,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
     'Last Name',
     'Phone Number',
     'Country of Origin',
-    'Exchange Type'
+    'Exchange Type',
   ]
 
   const allParticipants: Participant[] = []
@@ -102,7 +102,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
     mandatoryProperties.forEach((property) => {
       if (!modifiedParticipant.hasOwnProperty(property)) {
         throw new Error(
-          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
+          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`,
         )
       }
     })
@@ -135,7 +135,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       name: name,
       phoneNumber: phoneNumber,
       country: countryOfOrigin,
-      exchangeType: exchangeType
+      exchangeType: exchangeType,
     })
   })
 
@@ -162,7 +162,7 @@ async function createPdf(allParticipants: Participant[]) {
 
   // Get a list of all Tutors
   const tutors = allParticipants.filter(
-    (participant) => participant.exchangeType === ExchangeType.Tutor
+    (participant) => participant.exchangeType === ExchangeType.Tutor,
   )
   // Get the participants on the first page, can also be less than AMOUNT_PARTICIPANTS_FIRST_PAGE if there aren't many participants for the event.
   const firstParticipants = allParticipants.slice(0, AMOUNT_PARTICIPANTS_FIRST_PAGE)
@@ -192,7 +192,7 @@ function writeFirstPdfPage(
   firstPdfPage: PDFPage,
   tutors: Participant[],
   firstParticipants: Participant[],
-  font: PDFFont
+  font: PDFFont,
 ) {
   // Get the list of tutors to write down at the title bar
   const tutorNameList = tutors.map((tutor) => tutor.name).join(', ')
@@ -202,7 +202,7 @@ function writeFirstPdfPage(
     x: TUTOR_LIST_X,
     y: TUTOR_LIST_Y,
     font: font,
-    size: DEFAULT_FONT_SIZE
+    size: DEFAULT_FONT_SIZE,
   })
 
   // Add first participants
@@ -215,7 +215,7 @@ function writeFirstPdfPage(
 function writeOtherPdfPages(
   allParticipantsNotOnFirstPage: Participant[],
   remainingPdfPages: PDFPage[],
-  font: PDFFont
+  font: PDFFont,
 ): number {
   let remainingParticipants = allParticipantsNotOnFirstPage
   let currentPage = 0
@@ -225,7 +225,7 @@ function writeOtherPdfPages(
     // Throw an error if the pages are not enough
     if (currentPage > remainingPdfPages.length - 1)
       throw new Error(
-        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.'
+        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.',
       )
 
     // Write remaining participants (max AMOUNT_PARTICIPANTS_OTHER_PAGES)
@@ -233,7 +233,7 @@ function writeOtherPdfPages(
       remainingPdfPages[currentPage],
       remainingParticipants.slice(0, AMOUNT_PARTICIPANTS_OTHER_PAGES),
       PARTICIPANTS_OTHER_PAGES_Y,
-      font
+      font,
     )
 
     // Remove the just written participants from the remaining ones and add another page
@@ -254,7 +254,7 @@ function addAllParticipantsToPdfPage(
   pdfPage: PDFPage,
   participantsToWrite: Participant[],
   startY: number,
-  font: PDFFont
+  font: PDFFont,
 ) {
   for (let i = 0; i < participantsToWrite.length; i++) {
     const yCoordinate = startY - ROW_HEIGHT * i
@@ -274,19 +274,28 @@ function addParticipantToPdf(
   yCoordinate: number,
   font: PDFFont
 ) {
-  function drawString(string: string, x: number) {
+  function drawString(string: string, x: number, maxWidth: number) {
+    let fontSize = DEFAULT_FONT_SIZE
+    let textWidth = font.widthOfTextAtSize(string, fontSize)
+
+    // Set down the font size until the text fits the maximum width
+    while (textWidth > maxWidth) {
+      fontSize--
+      textWidth = font.widthOfTextAtSize(string, fontSize)
+    }
+
     // Write the participant's name
     pdfPage.drawText(string, {
       x: x,
       y: yCoordinate,
       font: font,
-      size: DEFAULT_FONT_SIZE
+      size: fontSize,
     })
   }
 
-  drawString(participant.name, NAME_X)
-  drawString(participant.phoneNumber, MOBILE_X)
-  drawString(participant.country, COUNTRY_X)
+  drawString(participant.name, NAME_X, MOBILE_X - NAME_X - 10)
+  drawString(participant.phoneNumber, MOBILE_X, COUNTRY_X - MOBILE_X - 9)
+  drawString(participant.country, COUNTRY_X, ERASMUS_X - COUNTRY_X - 18)
 
   // Figure out the position for the x as exchange type
   let exchangeTypeXPos = ERASMUS_X
@@ -298,6 +307,6 @@ function addParticipantToPdf(
     x: exchangeTypeXPos,
     y: yCoordinate + 1,
     font: font,
-    size: 17
+    size: 17,
   })
 }
