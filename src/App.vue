@@ -1,10 +1,17 @@
 <template>
   <div class="container" @dragenter.prevent="dragActive = true">
-    <div class="drag-window" v-if="dragActive"  @dragleave.prevent="dragActive = false" @drop.prevent="onDrop">
-      <p class="drag-text">
-        Leg deine xlsx-Datei hier ab.
-      </p>
-    </div>
+    <Transition>
+      <div
+        class="drag-window"
+        v-if="dragActive"
+        @dragleave.prevent="dragActive = false"
+        @drop.prevent="onDrop"
+      >
+
+        <p class="drag-text">Leg deine xlsx-Datei hier ab.</p>
+      </div>
+    </Transition>
+
 
     <img src="@/assets/logo.png" alt="Logo" class="logo" />
     <label
@@ -12,11 +19,11 @@
       class="file-upload-label"
       :class="fileUploaded ? 'upload-success' : ''"
     >
-      {{ fileUploaded?.name || 'Excel-Datei auswählen' }}
+      {{ fileUploaded?.name || 'Teilnehmerliste (Excel-Datei) auswählen' }}
     </label>
     <input type="file" id="file-upload" @change="onFileUpdate" accept=".xlsx" />
     <button class="convert-button" @click="convertButtonClicked()">
-      Teilnehmerliste in PDF umwandeln!
+      Liste in PDF umwandeln!
     </button>
     <p class="result-text" :style="{ color: resultText == successText ? 'lime' : 'red' }">
       {{ resultText }}
@@ -113,7 +120,7 @@ export default {
     },
 
     onDrop(e: DragEvent) {
-      this.dragActive = false;
+      this.dragActive = false
 
       // Something didn't work quite well
       if (!e.dataTransfer?.files) {
@@ -137,6 +144,9 @@ export default {
 
       // Successfully uploaded
       this.fileUploaded = fileDropped
+
+      // Automatically simulate button click
+      this.convertButtonClicked()
     }
   }
 }

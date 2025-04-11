@@ -276,12 +276,10 @@ function addParticipantToPdf(
 ) {
   function drawString(string: string, x: number, maxWidth: number) {
     let fontSize = DEFAULT_FONT_SIZE
-    let textWidth = font.widthOfTextAtSize(string, fontSize)
 
     // Set down the font size until the text fits the maximum width
-    while (textWidth > maxWidth) {
+    while (font.widthOfTextAtSize(string, fontSize) > maxWidth && fontSize > 1) {
       fontSize--
-      textWidth = font.widthOfTextAtSize(string, fontSize)
     }
 
     // Write the participant's name

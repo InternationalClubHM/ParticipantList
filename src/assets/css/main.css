@@ -26,17 +26,24 @@ body,
   align-items: center;
   justify-content: center;
 
-  background-color: rgba(127, 140, 141,0.5);
+  background-color: rgba(127, 140, 141, 0.8);
   font-size: min(40px, 6vw);
   color: white;
 }
 
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
 
 .drag-text {
   pointer-events: none;
 }
-
-
 
 .logo {
   height: 35%;
