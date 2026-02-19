@@ -19,7 +19,7 @@
       class="file-upload-label"
       for="file-upload"
     >
-      {{ fileUploaded?.name || 'Teilnehmerliste (Excel-Datei) auswählen' }}
+      {{ fileUploaded?.name || 'Teilnehmerliste (Ticket answers xlsx) auswählen' }}
     </label>
     <input id="file-upload" accept=".xlsx" type="file" @change="onFileUpdate"/>
     <button class="convert-button" @click="convertSubmit()">

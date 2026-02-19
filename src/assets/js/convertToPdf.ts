@@ -1,6 +1,6 @@
 // Imports here
 import { read, utils } from 'xlsx'
-import { PDFDocument, PDFFont, PDFPage } from 'pdf-lib'
+import { LineCapStyle, PDFDocument, PDFFont, PDFPage, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 
 interface Participant {
@@ -24,32 +24,33 @@ interface ValidParticipant {
   'Country of Origin': string
   'Exchange Type': string,
   'Ticket': string,
-  'Present': boolean,
+  'Ticket Used': string,
 }
 
 const basePdfDirectory = './base_pdf.pdf'
 
 // The x-coordinates of the items in the pdf. Meaning where the texts should be placed.
 const NAME_X = 70
-const MOBILE_X = 283
-const COUNTRY_X = 450
-const ERASMUS_X = 667
-const OTHER_EXCHANGE_X = 702.5
-const TUTOR_X = 737.75
+const MOBILE_X = 282.5
+const COUNTRY_X = 446
+const ERASMUS_X = 660.87
+const OTHER_EXCHANGE_X = 703.37
+const TUTOR_X = 745.85
+const PRESENT_X = 775
 
 const AMOUNT_PARTICIPANTS_FIRST_PAGE = 10
-const AMOUNT_PARTICIPANTS_OTHER_PAGES = 13
+const AMOUNT_PARTICIPANTS_OTHER_PAGES = 14
 
 const TUTOR_LIST_X = 205
-const TUTOR_LIST_Y = 457
+const TUTOR_LIST_Y = 457.5
 
 // The y-coordinate of the start of the participant list on the first page
-const PARTICIPANTS_FIRST_PAGE_Y = 370.57
+const PARTICIPANTS_FIRST_PAGE_Y = 370.67
 // The y-coordinate of the start of the participant list on all other pages
-const PARTICIPANTS_OTHER_PAGES_Y = 506.45
+const PARTICIPANTS_OTHER_PAGES_Y = 507.85
 
 // The row height, meaning how much space should be between the participants in the PDF.
-const ROW_HEIGHT = 31.40
+const ROW_HEIGHT = 31.17
 
 const DEFAULT_FONT_SIZE = 11
 
@@ -86,7 +87,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
     'Country of Origin',
     'Exchange Type',
     'Ticket',
-    'Joined Event'
+    'Ticket Used'
   ]
 
   const allParticipants: Participant[] = []
@@ -133,7 +134,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       phoneNumber: validParticipant['Phone Number'],
       country: validParticipant['Country of Origin'],
       exchangeType: exchangeType,
-      present: validParticipant['Present']
+      present: validParticipant['Ticket Used'] !== '-'
     })
   })
 
@@ -301,8 +302,31 @@ function addParticipantToPdf(
   // Draw the x for the exchange type
   pdfPage.drawText('x', {
     x: exchangeTypeXPos,
-    y: yCoordinate + 1,
+    y: yCoordinate - 2,
     font: font,
     size: 17
   })
+
+
+  if (participant.present) {
+    // Draw the check for presence
+    pdfPage.drawSvgPath('M4 12.6111L8.92308 17.5L20 6.5', {
+      x: PRESENT_X,
+      y: yCoordinate + 12,
+      borderColor: rgb(0, 1, 0),
+      borderWidth: 2,
+      borderLineCap: LineCapStyle.Round,
+    })
+  } else {
+    // Draw an x for not present
+    pdfPage.drawSvgPath('M4 4L20 20M20 4L4 20', {
+      x: PRESENT_X,
+      y: yCoordinate + 12,
+      borderColor: rgb(1, 0, 0),
+      borderWidth: 2,
+      borderLineCap: LineCapStyle.Round,
+    })
+  }
+
+
 }
