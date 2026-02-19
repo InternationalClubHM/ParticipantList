@@ -7,7 +7,8 @@ interface Participant {
   name: string
   phoneNumber: string
   country: string
-  exchangeType: ExchangeType
+  exchangeType: ExchangeType,
+  present: boolean
 }
 
 enum ExchangeType {
@@ -18,36 +19,37 @@ enum ExchangeType {
 
 /** What has to be found for every participant in the Excel file */
 interface ValidParticipant {
-  'First Name': string
-  'Last Name': string
+  'Name': string
   'Phone Number': string
   'Country of Origin': string
-  'Exchange Type': string
+  'Exchange Type': string,
+  'Ticket': string,
+  'Present': boolean,
 }
 
 const basePdfDirectory = './base_pdf.pdf'
 
 // The x-coordinates of the items in the pdf. Meaning where the texts should be placed.
-const NAME_X = 67
-const MOBILE_X = 230
-const COUNTRY_X = 351
-const ERASMUS_X = 467
-const OTHER_EXCHANGE_X = 502.5
-const TUTOR_X = 537.75
+const NAME_X = 70
+const MOBILE_X = 283
+const COUNTRY_X = 450
+const ERASMUS_X = 667
+const OTHER_EXCHANGE_X = 702.5
+const TUTOR_X = 737.75
 
-const AMOUNT_PARTICIPANTS_FIRST_PAGE = 8
-const AMOUNT_PARTICIPANTS_OTHER_PAGES = 16
+const AMOUNT_PARTICIPANTS_FIRST_PAGE = 10
+const AMOUNT_PARTICIPANTS_OTHER_PAGES = 13
 
-const TUTOR_LIST_X = 210
-const TUTOR_LIST_Y = 468
+const TUTOR_LIST_X = 205
+const TUTOR_LIST_Y = 457
 
 // The y-coordinate of the start of the participant list on the first page
-const PARTICIPANTS_FIRST_PAGE_Y = 284.87
+const PARTICIPANTS_FIRST_PAGE_Y = 370.57
 // The y-coordinate of the start of the participant list on all other pages
-const PARTICIPANTS_OTHER_PAGES_Y = 506.15
+const PARTICIPANTS_OTHER_PAGES_Y = 506.45
 
-// The row height, meaning how much space should be between the participants in the pdf.
-const ROW_HEIGHT = 27.41
+// The row height, meaning how much space should be between the participants in the PDF.
+const ROW_HEIGHT = 31.40
 
 const DEFAULT_FONT_SIZE = 11
 
@@ -79,63 +81,59 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
 
   // The properties which must be found for each participant
   const mandatoryProperties = [
-    'First Name',
-    'Last Name',
+    'Name',
     'Phone Number',
     'Country of Origin',
     'Exchange Type',
+    'Ticket',
+    'Joined Event'
   ]
 
   const allParticipants: Participant[] = []
 
   // Iterate through all rows
   sheetRows.forEach((participant, index) => {
-    const modifiedParticipant = participant as { [key: string]: string }
-
-    // Trim each value.
-    for (const key in participant) {
-      // Also convert every cell to string
-      modifiedParticipant[key.trim()] = modifiedParticipant[key].toString()
-    }
+    const newParticipant: { [key: string]: string } = {}
 
     // For every participant, every mandatory property must exist. If one does not, an error is thrown.
     mandatoryProperties.forEach((property) => {
-      if (!modifiedParticipant.hasOwnProperty(property)) {
+      const found = Object.keys(participant).find(p => p.toLowerCase().startsWith(property.toLowerCase()))
+      if (!found) {
         throw new Error(
-          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`,
+          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
         )
       }
+
+      const valueFound = (participant as { [key: string]: string })[found]
+      newParticipant[property] = valueFound.trim()
     })
 
-    // Cast is fine, as we just checked if every property exists (an error would have been thrown).
-    const validParticipant = modifiedParticipant as unknown as ValidParticipant
+    // Cast is fine, as we just checked if every property exists. Else, an error would have been thrown.
+    const validParticipant = newParticipant as unknown as ValidParticipant
 
     // The name is the first name + last name
-    const name = validParticipant['First Name'] + ' ' + validParticipant['Last Name']
-
-    const phoneNumber = validParticipant['Phone Number']
-    const countryOfOrigin = validParticipant['Country of Origin']
     const exchangeTypeString = validParticipant['Exchange Type']
 
     // Convert the string exchange type to enum.
     let exchangeType: ExchangeType
-    if (exchangeTypeString.startsWith('Erasmus')) {
-      exchangeType = ExchangeType.Erasmus
-    } else if (exchangeTypeString.startsWith('Other')) {
-      exchangeType = ExchangeType.Other
-    } else if (exchangeTypeString.startsWith('Tutor')) {
+    if (validParticipant['Ticket'] === 'Ticket for Tutors') {
       exchangeType = ExchangeType.Tutor
+    } else if (exchangeTypeString.toLowerCase().startsWith('erasmus')) {
+      exchangeType = ExchangeType.Erasmus
+    } else if (exchangeTypeString.toLowerCase().startsWith('other')) {
+      exchangeType = ExchangeType.Other
     } else {
       // If the exchange type cannot be assigned, throw an error
-      throw new Error(`Der Austauschtyp '${exchangeTypeString}' ist ungültig für ${name}!`)
+      throw new Error(`Der Austauschtyp '${exchangeTypeString}' ist ungültig für ${validParticipant['Name']}!`)
     }
 
     // Create a new Participant object with the relevant data
     allParticipants.push({
-      name: name,
-      phoneNumber: phoneNumber,
-      country: countryOfOrigin,
+      name: validParticipant['Name'],
+      phoneNumber: validParticipant['Phone Number'],
+      country: validParticipant['Country of Origin'],
       exchangeType: exchangeType,
+      present: validParticipant['Present']
     })
   })
 
@@ -162,7 +160,7 @@ async function createPdf(allParticipants: Participant[]) {
 
   // Get a list of all Tutors
   const tutors = allParticipants.filter(
-    (participant) => participant.exchangeType === ExchangeType.Tutor,
+    (participant) => participant.exchangeType === ExchangeType.Tutor
   )
   // Get the participants on the first page, can also be less than AMOUNT_PARTICIPANTS_FIRST_PAGE if there aren't many participants for the event.
   const firstParticipants = allParticipants.slice(0, AMOUNT_PARTICIPANTS_FIRST_PAGE)
@@ -192,7 +190,7 @@ function writeFirstPdfPage(
   firstPdfPage: PDFPage,
   tutors: Participant[],
   firstParticipants: Participant[],
-  font: PDFFont,
+  font: PDFFont
 ) {
   // Get the list of tutors to write down at the title bar
   const tutorNameList = tutors.map((tutor) => tutor.name).join(', ')
@@ -202,7 +200,7 @@ function writeFirstPdfPage(
     x: TUTOR_LIST_X,
     y: TUTOR_LIST_Y,
     font: font,
-    size: DEFAULT_FONT_SIZE,
+    size: DEFAULT_FONT_SIZE
   })
 
   // Add first participants
@@ -215,7 +213,7 @@ function writeFirstPdfPage(
 function writeOtherPdfPages(
   allParticipantsNotOnFirstPage: Participant[],
   remainingPdfPages: PDFPage[],
-  font: PDFFont,
+  font: PDFFont
 ): number {
   let remainingParticipants = allParticipantsNotOnFirstPage
   let currentPage = 0
@@ -225,7 +223,7 @@ function writeOtherPdfPages(
     // Throw an error if the pages are not enough
     if (currentPage > remainingPdfPages.length - 1)
       throw new Error(
-        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.',
+        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.'
       )
 
     // Write remaining participants (max AMOUNT_PARTICIPANTS_OTHER_PAGES)
@@ -233,7 +231,7 @@ function writeOtherPdfPages(
       remainingPdfPages[currentPage],
       remainingParticipants.slice(0, AMOUNT_PARTICIPANTS_OTHER_PAGES),
       PARTICIPANTS_OTHER_PAGES_Y,
-      font,
+      font
     )
 
     // Remove the just written participants from the remaining ones and add another page
@@ -254,7 +252,7 @@ function addAllParticipantsToPdfPage(
   pdfPage: PDFPage,
   participantsToWrite: Participant[],
   startY: number,
-  font: PDFFont,
+  font: PDFFont
 ) {
   for (let i = 0; i < participantsToWrite.length; i++) {
     const yCoordinate = startY - ROW_HEIGHT * i
@@ -272,7 +270,7 @@ function addParticipantToPdf(
   pdfPage: PDFPage,
   participant: Participant,
   yCoordinate: number,
-  font: PDFFont,
+  font: PDFFont
 ) {
   function drawString(string: string, x: number, maxWidth: number) {
     let fontSize = DEFAULT_FONT_SIZE
@@ -287,7 +285,7 @@ function addParticipantToPdf(
       x: x,
       y: yCoordinate,
       font: font,
-      size: fontSize,
+      size: fontSize
     })
   }
 
@@ -305,6 +303,6 @@ function addParticipantToPdf(
     x: exchangeTypeXPos,
     y: yCoordinate + 1,
     font: font,
-    size: 17,
+    size: 17
   })
 }
