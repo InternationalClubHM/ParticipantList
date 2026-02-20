@@ -109,7 +109,8 @@ const convertSubmit = async () => {
   const fileUrl = window.URL.createObjectURL(resultPdf)
   const alink = document.createElement('a')
   alink.href = fileUrl
-  alink.download = 'Teilnehmerliste.pdf'
+  const uploadedFileName = fileUploaded.value.name
+  alink.download = 'Teilnehmerliste_' + uploadedFileName.substring(0, uploadedFileName.lastIndexOf('.')) + '.pdf'
   alink.click()
 
   // Signalize success!
