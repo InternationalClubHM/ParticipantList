@@ -117,7 +117,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
 
     // Convert the string exchange type to enum.
     let exchangeType: ExchangeType
-    if (validParticipant['Ticket'] === 'Ticket for Tutors') {
+    if (validParticipant['Ticket'].toLowerCase().includes("tutor")) {
       exchangeType = ExchangeType.Tutor
     } else if (exchangeTypeString.toLowerCase().startsWith('erasmus')) {
       exchangeType = ExchangeType.Erasmus
