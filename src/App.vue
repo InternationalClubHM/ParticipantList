@@ -7,11 +7,9 @@
         @dragleave.prevent="dragActive = false"
         @drop.prevent="onDrop"
       >
-
         <p class="drag-text">Leg deine xlsx-Datei hier ab.</p>
       </div>
     </Transition>
-
 
     <img src="@/assets/logo.png" alt="Logo" class="logo" />
     <label
@@ -21,10 +19,8 @@
     >
       {{ fileUploaded?.name || 'Teilnehmerliste (Ticket answers xlsx) auswählen' }}
     </label>
-    <input id="file-upload" accept=".xlsx" type="file" @change="onFileUpdate"/>
-    <button class="convert-button" @click="convertSubmit()">
-      Liste in PDF umwandeln!
-    </button>
+    <input id="file-upload" accept=".xlsx" type="file" @change="onFileUpdate" />
+    <button class="convert-button" @click="convertSubmit()">Liste in PDF umwandeln!</button>
     <p :style="{ color: resultText === successText ? 'lime' : 'red' }" class="result-text">
       {{ resultText }}
     </p>
@@ -32,7 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, onUnmounted, ref} from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { convertToPdf } from '@/assets/js/convertToPdf.ts'
 
 // For the drag-and-drop action to work
@@ -41,7 +37,7 @@ function preventDefaults(e: Event) {
 }
 
 const events = ['dragenter', 'dragover', 'dragleave', 'drop']
-const successText = "PDF erstellt und heruntergeladen!"
+const successText = 'PDF erstellt und heruntergeladen!'
 
 // Override the default behaviour of opening a file on drag and drop
 onMounted(() => {
@@ -57,8 +53,8 @@ onUnmounted(() => {
 })
 
 const fileUploaded = ref<File | null>(null)
-const resultText = ref("");
-const dragActive = ref(false);
+const resultText = ref('')
+const dragActive = ref(false)
 
 // Ran when someone updates a file or the file-upload input changes in a similar way
 const onFileUpdate = (event: Event) => {
@@ -67,7 +63,7 @@ const onFileUpdate = (event: Event) => {
     const file = target.files[0]
 
     if (!file.name.endsWith('.xlsx')) {
-      resultText.value = "Bitte wähle eine .xlsx (Excel) Datei aus."
+      resultText.value = 'Bitte wähle eine .xlsx (Excel) Datei aus.'
       return
     }
 
@@ -110,7 +106,8 @@ const convertSubmit = async () => {
   const alink = document.createElement('a')
   alink.href = fileUrl
   const uploadedFileName = fileUploaded.value.name
-  alink.download = 'Teilnehmerliste_' + uploadedFileName.substring(0, uploadedFileName.lastIndexOf('.')) + '.pdf'
+  alink.download =
+    'Teilnehmerliste_' + uploadedFileName.substring(0, uploadedFileName.lastIndexOf('.')) + '.pdf'
   alink.click()
 
   // Signalize success!

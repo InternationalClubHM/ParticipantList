@@ -7,7 +7,7 @@ interface Participant {
   name: string
   phoneNumber: string
   country: string
-  exchangeType: ExchangeType,
+  exchangeType: ExchangeType
   present: boolean
 }
 
@@ -19,12 +19,12 @@ enum ExchangeType {
 
 /** What has to be found for every participant in the Excel file */
 interface ValidParticipant {
-  'Name': string
+  Name: string
   'Phone Number': string
   'Country of Origin': string
-  'Exchange Type': string,
-  'Ticket': string,
-  'Ticket Used': string,
+  'Exchange Type': string
+  Ticket: string
+  'Ticket used': string
 }
 
 const basePdfDirectory = './base_pdf.pdf'
@@ -80,14 +80,17 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
   // Get a list of json objects containing information about each row (each participant)
   const sheetRows: object[] = utils.sheet_to_json(sheet)
 
+  // The properties which always come with the ticket answers
+  const defaultProperties = [
+    'Name',
+    'Ticket',
+    'Ticket used'
+  ]
   // The properties which must be found for each participant
   const mandatoryProperties = [
-    'Name',
     'Phone Number',
     'Country of Origin',
-    'Exchange Type',
-    'Ticket',
-    'Ticket Used'
+    'Exchange Type'
   ]
 
   const allParticipants: Participant[] = []
@@ -96,16 +99,29 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
   sheetRows.forEach((participant, index) => {
     const newParticipant: { [key: string]: string } = {}
 
+    // For every participant, every default property must exist. If one does not, an error is thrown.
+    defaultProperties.forEach((property) => {
+      if (!Object.keys(participant).includes(property)) {
+        throw new Error(
+          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
+        )
+      }
+      newParticipant[property] = (participant as { [key: string]: string })[property]
+    })
+
     // For every participant, every mandatory property must exist. If one does not, an error is thrown.
     mandatoryProperties.forEach((property) => {
-      const found = Object.keys(participant).find(p => p.toLowerCase().startsWith(property.toLowerCase()))
-      if (!found) {
+      const found = Object.keys(participant).filter((p) =>
+        p.toLowerCase().startsWith(property.toLowerCase())
+      )
+      if (found.length == 0) {
         throw new Error(
           `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
         )
       }
 
-      const valueFound = (participant as { [key: string]: string })[found]
+      // Get the last found property, as the previous might be empty due to a bug in orbi.
+      const valueFound = (participant as { [key: string]: string })[found[found.length - 1]]
       newParticipant[property] = valueFound.trim()
     })
 
@@ -117,7 +133,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
 
     // Convert the string exchange type to enum.
     let exchangeType: ExchangeType
-    if (validParticipant['Ticket'].toLowerCase().includes("tutor")) {
+    if (validParticipant['Ticket'].toLowerCase().includes('tutor')) {
       exchangeType = ExchangeType.Tutor
     } else if (exchangeTypeString.toLowerCase().startsWith('erasmus')) {
       exchangeType = ExchangeType.Erasmus
@@ -125,7 +141,9 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       exchangeType = ExchangeType.Other
     } else {
       // If the exchange type cannot be assigned, throw an error
-      throw new Error(`Der Austauschtyp '${exchangeTypeString}' ist ungültig für ${validParticipant['Name']}!`)
+      throw new Error(
+        `Der Austauschtyp '${exchangeTypeString}' ist ungültig für ${validParticipant['Name']}!`
+      )
     }
 
     // Create a new Participant object with the relevant data
@@ -134,7 +152,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       phoneNumber: validParticipant['Phone Number'],
       country: validParticipant['Country of Origin'],
       exchangeType: exchangeType,
-      present: validParticipant['Ticket Used'] !== '-'
+      present: validParticipant['Ticket used'] !== null && validParticipant['Ticket used'] !== '-'
     })
   })
 
@@ -307,7 +325,6 @@ function addParticipantToPdf(
     size: 17
   })
 
-
   if (participant.present) {
     // Draw the check for presence
     pdfPage.drawSvgPath('M4 12.6111L8.92308 17.5L20 6.5', {
@@ -315,7 +332,7 @@ function addParticipantToPdf(
       y: yCoordinate + 12,
       borderColor: rgb(0, 1, 0),
       borderWidth: 2,
-      borderLineCap: LineCapStyle.Round,
+      borderLineCap: LineCapStyle.Round
     })
   } else {
     // Draw an x for not present
@@ -324,9 +341,7 @@ function addParticipantToPdf(
       y: yCoordinate + 12,
       borderColor: rgb(1, 0, 0),
       borderWidth: 2,
-      borderLineCap: LineCapStyle.Round,
+      borderLineCap: LineCapStyle.Round
     })
   }
-
-
 }
