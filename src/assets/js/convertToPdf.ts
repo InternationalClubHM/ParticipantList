@@ -15,6 +15,7 @@ enum ExchangeType {
   Erasmus,
   Other,
   Tutor,
+  Undefined
 }
 
 /** What has to be found for every participant in the Excel file */
@@ -140,10 +141,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
     } else if (exchangeTypeString.toLowerCase().startsWith('other')) {
       exchangeType = ExchangeType.Other
     } else {
-      // If the exchange type cannot be assigned, throw an error
-      throw new Error(
-        `Der Austauschtyp '${exchangeTypeString}' ist ungültig für ${validParticipant['Name']}!`
-      )
+      exchangeType = ExchangeType.Undefined
     }
 
     // Create a new Participant object with the relevant data
@@ -312,18 +310,28 @@ function addParticipantToPdf(
   drawString(participant.phoneNumber, MOBILE_X, COUNTRY_X - MOBILE_X - 9)
   drawString(participant.country, COUNTRY_X, ERASMUS_X - COUNTRY_X - 18)
 
-  // Figure out the position for the x as exchange type
-  let exchangeTypeXPos = ERASMUS_X
-  if (participant.exchangeType === ExchangeType.Other) exchangeTypeXPos = OTHER_EXCHANGE_X
-  else if (participant.exchangeType === ExchangeType.Tutor) exchangeTypeXPos = TUTOR_X
+  if (participant.exchangeType != ExchangeType.Undefined) {
+    let exchangeTypeXPos
+    switch (participant.exchangeType) {
+      case ExchangeType.Erasmus:
+        exchangeTypeXPos = ERASMUS_X;
+        break;
+      case ExchangeType.Other:
+        exchangeTypeXPos = OTHER_EXCHANGE_X;
+        break;
+      case ExchangeType.Tutor:
+        exchangeTypeXPos = TUTOR_X;
+        break;
+    }
 
-  // Draw the x for the exchange type
-  pdfPage.drawText('x', {
-    x: exchangeTypeXPos,
-    y: yCoordinate - 2,
-    font: font,
-    size: 17
-  })
+    // Draw the x for the exchange type
+    pdfPage.drawText('x', {
+      x: exchangeTypeXPos,
+      y: yCoordinate - 2,
+      font: font,
+      size: 17
+    })
+  }
 
   if (participant.present) {
     // Draw the check for presence
