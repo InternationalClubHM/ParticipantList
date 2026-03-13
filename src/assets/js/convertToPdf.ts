@@ -15,7 +15,7 @@ enum ExchangeType {
   Erasmus,
   Other,
   Tutor,
-  Undefined
+  Undefined,
 }
 
 /** What has to be found for every participant in the Excel file */
@@ -82,17 +82,9 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
   const sheetRows: object[] = utils.sheet_to_json(sheet)
 
   // The properties which always come with the ticket answers
-  const defaultProperties = [
-    'Name',
-    'Ticket',
-    'Ticket used'
-  ]
+  const defaultProperties = ['Name', 'Ticket', 'Ticket used']
   // The properties which must be found for each participant
-  const mandatoryProperties = [
-    'Phone Number',
-    'Country of Origin',
-    'Exchange Type'
-  ]
+  const mandatoryProperties = ['Phone Number', 'Country of Origin', 'Exchange Type']
 
   const allParticipants: Participant[] = []
 
@@ -102,9 +94,10 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
 
     // For every participant, every default property must exist. If one does not, an error is thrown.
     defaultProperties.forEach((property) => {
+      // Direct match required!
       if (!Object.keys(participant).includes(property)) {
         throw new Error(
-          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
+          `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`,
         )
       }
       newParticipant[property] = (participant as { [key: string]: string })[property]
@@ -112,18 +105,23 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
 
     // For every participant, every mandatory property must exist. If one does not, an error is thrown.
     mandatoryProperties.forEach((property) => {
-      const found = Object.keys(participant).filter((p) =>
-        p.toLowerCase().startsWith(property.toLowerCase())
+      const found = Object.entries(participant).find(
+        (p) =>
+          // The key must be in the mandatory properties and the value should correctly exist.
+          p[0].toLowerCase().startsWith(property.toLowerCase()) &&
+          p[1] !== null &&
+          p[1] !== '' &&
+          p[1] !== '-',
       )
-      if (found.length == 0) {
+
+      const value = found ? found[1] : '-'
+      /*      if (!found) {
         throw new Error(
           `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
         )
-      }
+      }*/
 
-      // Get the last found property, as the previous might be empty due to a bug in orbi.
-      const valueFound = (participant as { [key: string]: string })[found[found.length - 1]]
-      newParticipant[property] = valueFound.trim()
+      newParticipant[property] = value.trim()
     })
 
     // Cast is fine, as we just checked if every property exists. Else, an error would have been thrown.
@@ -150,7 +148,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       phoneNumber: validParticipant['Phone Number'],
       country: validParticipant['Country of Origin'],
       exchangeType: exchangeType,
-      present: validParticipant['Ticket used'] !== null && validParticipant['Ticket used'] !== '-'
+      present: validParticipant['Ticket used'] !== null && validParticipant['Ticket used'] !== '-',
     })
   })
 
@@ -177,7 +175,7 @@ async function createPdf(allParticipants: Participant[]) {
 
   // Get a list of all Tutors
   const tutors = allParticipants.filter(
-    (participant) => participant.exchangeType === ExchangeType.Tutor
+    (participant) => participant.exchangeType === ExchangeType.Tutor,
   )
   // Get the participants on the first page, can also be less than AMOUNT_PARTICIPANTS_FIRST_PAGE if there aren't many participants for the event.
   const firstParticipants = allParticipants.slice(0, AMOUNT_PARTICIPANTS_FIRST_PAGE)
@@ -207,7 +205,7 @@ function writeFirstPdfPage(
   firstPdfPage: PDFPage,
   tutors: Participant[],
   firstParticipants: Participant[],
-  font: PDFFont
+  font: PDFFont,
 ) {
   // Get the list of tutors to write down at the title bar
   const tutorNameList = tutors.map((tutor) => tutor.name).join(', ')
@@ -217,7 +215,7 @@ function writeFirstPdfPage(
     x: TUTOR_LIST_X,
     y: TUTOR_LIST_Y,
     font: font,
-    size: DEFAULT_FONT_SIZE
+    size: DEFAULT_FONT_SIZE,
   })
 
   // Add first participants
@@ -230,7 +228,7 @@ function writeFirstPdfPage(
 function writeOtherPdfPages(
   allParticipantsNotOnFirstPage: Participant[],
   remainingPdfPages: PDFPage[],
-  font: PDFFont
+  font: PDFFont,
 ): number {
   let remainingParticipants = allParticipantsNotOnFirstPage
   let currentPage = 0
@@ -240,7 +238,7 @@ function writeOtherPdfPages(
     // Throw an error if the pages are not enough
     if (currentPage > remainingPdfPages.length - 1)
       throw new Error(
-        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.'
+        'Die originale PDF-Datei hat leider zu wenig Seiten. Bitte reduziere die Anzahl der Teilnehmer.',
       )
 
     // Write remaining participants (max AMOUNT_PARTICIPANTS_OTHER_PAGES)
@@ -248,7 +246,7 @@ function writeOtherPdfPages(
       remainingPdfPages[currentPage],
       remainingParticipants.slice(0, AMOUNT_PARTICIPANTS_OTHER_PAGES),
       PARTICIPANTS_OTHER_PAGES_Y,
-      font
+      font,
     )
 
     // Remove the just written participants from the remaining ones and add another page
@@ -269,7 +267,7 @@ function addAllParticipantsToPdfPage(
   pdfPage: PDFPage,
   participantsToWrite: Participant[],
   startY: number,
-  font: PDFFont
+  font: PDFFont,
 ) {
   for (let i = 0; i < participantsToWrite.length; i++) {
     const yCoordinate = startY - ROW_HEIGHT * i
@@ -287,7 +285,7 @@ function addParticipantToPdf(
   pdfPage: PDFPage,
   participant: Participant,
   yCoordinate: number,
-  font: PDFFont
+  font: PDFFont,
 ) {
   function drawString(string: string, x: number, maxWidth: number) {
     let fontSize = DEFAULT_FONT_SIZE
@@ -302,7 +300,7 @@ function addParticipantToPdf(
       x: x,
       y: yCoordinate,
       font: font,
-      size: fontSize
+      size: fontSize,
     })
   }
 
@@ -314,14 +312,14 @@ function addParticipantToPdf(
     let exchangeTypeXPos
     switch (participant.exchangeType) {
       case ExchangeType.Erasmus:
-        exchangeTypeXPos = ERASMUS_X;
-        break;
+        exchangeTypeXPos = ERASMUS_X
+        break
       case ExchangeType.Other:
-        exchangeTypeXPos = OTHER_EXCHANGE_X;
-        break;
+        exchangeTypeXPos = OTHER_EXCHANGE_X
+        break
       case ExchangeType.Tutor:
-        exchangeTypeXPos = TUTOR_X;
-        break;
+        exchangeTypeXPos = TUTOR_X
+        break
     }
 
     // Draw the x for the exchange type
@@ -329,7 +327,7 @@ function addParticipantToPdf(
       x: exchangeTypeXPos,
       y: yCoordinate - 2,
       font: font,
-      size: 17
+      size: 17,
     })
   }
 
@@ -340,7 +338,7 @@ function addParticipantToPdf(
       y: yCoordinate + 12,
       borderColor: rgb(0, 1, 0),
       borderWidth: 2,
-      borderLineCap: LineCapStyle.Round
+      borderLineCap: LineCapStyle.Round,
     })
   } else {
     // Draw an x for not present
@@ -349,7 +347,7 @@ function addParticipantToPdf(
       y: yCoordinate + 12,
       borderColor: rgb(1, 0, 0),
       borderWidth: 2,
-      borderLineCap: LineCapStyle.Round
+      borderLineCap: LineCapStyle.Round,
     })
   }
 }
