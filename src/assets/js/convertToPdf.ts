@@ -8,7 +8,7 @@ interface Participant {
   phoneNumber: string
   country: string
   exchangeType: ExchangeType
-  present: boolean
+  checkin: Date | null
 }
 
 enum ExchangeType {
@@ -34,10 +34,10 @@ const basePdfDirectory = './base_pdf.pdf'
 const NAME_X = 70
 const MOBILE_X = 282.5
 const COUNTRY_X = 446
-const ERASMUS_X = 660.87
-const OTHER_EXCHANGE_X = 703.37
-const TUTOR_X = 745.85
-const PRESENT_X = 775
+const ERASMUS_X = 596.87
+const OTHER_EXCHANGE_X = 639.37
+const TUTOR_X = 681.85
+const CHECKIN_X = 710
 
 const AMOUNT_PARTICIPANTS_FIRST_PAGE = 10
 const AMOUNT_PARTICIPANTS_OTHER_PAGES = 14
@@ -46,7 +46,7 @@ const TUTOR_LIST_X = 205
 const TUTOR_LIST_Y = 457.5
 
 // The y-coordinate of the start of the participant list on the first page
-const PARTICIPANTS_FIRST_PAGE_Y = 370.67
+const PARTICIPANTS_FIRST_PAGE_Y = 370.5
 // The y-coordinate of the start of the participant list on all other pages
 const PARTICIPANTS_OTHER_PAGES_Y = 507.85
 
@@ -148,7 +148,8 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       phoneNumber: validParticipant['Phone Number'],
       country: validParticipant['Country of Origin'],
       exchangeType: exchangeType,
-      present: validParticipant['Ticket used'] !== null && validParticipant['Ticket used'] !== '-',
+      checkin:
+        validParticipant['Ticket used'] === '-' ? null : new Date(validParticipant['Ticket used']),
     })
   })
 
@@ -331,19 +332,13 @@ function addParticipantToPdf(
     })
   }
 
-  if (participant.present) {
-    // Draw the check for presence
-    pdfPage.drawSvgPath('M4 12.6111L8.92308 17.5L20 6.5', {
-      x: PRESENT_X,
-      y: yCoordinate + 12,
-      borderColor: rgb(0, 1, 0),
-      borderWidth: 2,
-      borderLineCap: LineCapStyle.Round,
-    })
+  if (participant.checkin) {
+    // Draw the check-in date
+    drawString(participant.checkin.toLocaleString('de-DE'), CHECKIN_X, 100)
   } else {
     // Draw an x for not present
     pdfPage.drawSvgPath('M4 4L20 20M20 4L4 20', {
-      x: PRESENT_X,
+      x: CHECKIN_X,
       y: yCoordinate + 12,
       borderColor: rgb(1, 0, 0),
       borderWidth: 2,
