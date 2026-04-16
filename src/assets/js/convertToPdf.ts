@@ -24,7 +24,7 @@ interface ValidParticipant {
   'Phone Number': string
   'Country of Origin': string
   'Exchange Type': string
-  Ticket: string
+  'Ticket': string
   'Ticket used': string
 }
 
@@ -32,8 +32,8 @@ const basePdfDirectory = './base_pdf.pdf'
 
 // The x-coordinates of the items in the pdf. Meaning where the texts should be placed.
 const NAME_X = 70
-const MOBILE_X = 282.5
-const COUNTRY_X = 446
+const MOBILE_X = 270
+const COUNTRY_X = 425
 const ERASMUS_X = 596.87
 const OTHER_EXCHANGE_X = 639.37
 const TUTOR_X = 681.85
@@ -108,7 +108,7 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
       const found = Object.entries(participant).find(
         (p) =>
           // The key must be in the mandatory properties and the value should correctly exist.
-          p[0].toLowerCase().startsWith(property.toLowerCase()) &&
+          p[0].toLowerCase().includes(property.toLowerCase()) &&
           p[1] !== null &&
           p[1] !== '' &&
           p[1] !== '-',
@@ -120,6 +120,9 @@ async function getParticipants(excelFile: File): Promise<Participant[]> {
           `Datei ungültig: '${property}' existiert nicht für den ${index + 1}. Teilnehmer.`
         )
       }*/
+      if (!found) {
+        console.warn("Warnung: '" + property + "' existiert nicht für den " + (index + 1) + ". Teilnehmer.")
+      }
 
       newParticipant[property] = value.trim()
     })
